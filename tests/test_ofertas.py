@@ -121,3 +121,17 @@ def test_web(tmp_path, monkeypatch):
     assert "Aceite Patrona" in r.get_data(as_text=True)
     assert app.get("/producto/1").status_code == 200
     assert app.get("/ofertas").status_code == 200
+
+
+def test_grand_captura(tmp_path, monkeypatch):
+    monkeypatch.setitem(TIENDAS, "heb", Falsa)
+    from ofertas.web import crear_app
+    db = DB(tmp_path / "g.db")
+    app = crear_app(db, {**CFG, "tiendas": ["heb", "grand"]}).test_client()
+    r = app.post("/captura", data={"tienda": "grand", "nombre": "Aceite Capullo 1 l", "precio": "35.90"})
+    assert r.status_code == 302
+    html = app.get("/?q=aceite&t=heb&t=grand").get_data(as_text=True)
+    assert "GranD" in html and "$35.90/l" in html
+    assert html.index("Capullo") < html.index("Patrona")  # GranD más barato por litro
+    # si no se selecciona GranD, no aparece
+    assert "Capullo" not in app.get("/?q=aceite&t=heb").get_data(as_text=True)

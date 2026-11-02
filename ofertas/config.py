@@ -12,7 +12,8 @@ _DEFAULT = {
     "codigo_postal": "87130",          # Cd. Victoria, Tamaulipas
     "estado": "TAMAULIPAS",
     "municipio": "VICTORIA",
-    "tiendas": ["walmart", "aurrera", "heb", "chedraui", "soriana"],
+    "tiendas": ["walmart", "aurrera", "heb", "chedraui", "soriana", "grand"],
+    "dias_vigencia_captura": 14,      # cuántos días se muestra un precio capturado a mano
     "umbral_oferta_pct": 15,          # % bajo la mediana histórica para considerarla "buena"
     "dias_historial": 90,
     "tolerancia_precio_antes_pct": 5, # si el "antes" supera el máximo real visto +5% -> sospechoso

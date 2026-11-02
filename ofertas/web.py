@@ -9,14 +9,16 @@ from .alertas import NOMBRES, revisar
 from .analisis import evaluar
 from .db import DB
 from .modelos import Producto
-from .servicio import buscar
+from .servicio import buscar, recientes_manual, registrar_captura
+
+MANUALES = {"grand": "GranD"}
 
 
 def crear_app(db: DB | None = None, cfg: dict | None = None) -> Flask:
     app = Flask(__name__)
     app.config["db"] = db or DB(config.DB_PATH)
     app.config["cfg"] = cfg or config.cargar()
-    app.jinja_env.globals.update(NOMBRES=NOMBRES, TIENDAS=TIENDAS)
+    app.jinja_env.globals.update(NOMBRES=NOMBRES, TIENDAS=TIENDAS, MANUALES=MANUALES)
     app.jinja_env.filters["mxn"] = lambda v: "" if v is None else f"${v:,.2f}"
 
     def D() -> DB:
@@ -46,6 +48,23 @@ def crear_app(db: DB | None = None, cfg: dict | None = None) -> Flask:
                 filas.append((f, p, v))
         filas.sort(key=lambda x: -(x[2].ahorro_vs_mediana_pct or 0))
         return render_template("ofertas.html", filas=filas, cfg=C())
+
+    @app.route("/captura", methods=["GET", "POST"])
+    def captura():
+        aviso = None
+        if request.method == "POST":
+            f = request.form
+            try:
+                precio = float(f["precio"])
+                antes = float(f["antes"]) if f.get("antes", "").strip() else None
+            except ValueError:
+                aviso = "Precio inválido."
+            else:
+                if f.get("nombre", "").strip():
+                    registrar_captura(D(), f.get("tienda", "grand"), f["nombre"], precio, antes, f.get("marca", ""))
+                    return redirect(url_for("captura", ok=1))
+        return render_template("captura.html", filas=recientes_manual(D()), aviso=aviso,
+                               ok=request.args.get("ok"), cfg=C())
 
     @app.get("/producto/<int:pid>")
     def producto(pid):

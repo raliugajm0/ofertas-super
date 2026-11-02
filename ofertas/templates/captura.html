@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block cuerpo %}
+<h2>Capturar precios de GranD</h2>
+<p class="mut">GranD no tiene catálogo en línea: publica su folleto semanal en Facebook, Instagram y Flipsnack. Anota aquí los precios del folleto, del anaquel o de tu ticket. Entran a la comparación durante {{ cfg.dias_vigencia_captura }} días y quedan en el historial.</p>
+{% if ok %}<div class="err" style="background:var(--okbg);color:var(--ok)">Precio registrado.</div>{% endif %}
+{% if aviso %}<div class="err">{{ aviso }}</div>{% endif %}
+<form class="buscar" method="post">
+  <input type="hidden" name="tienda" value="grand">
+  <input type="text" name="nombre" placeholder="Producto con presentación (ej. Frijol Isadora 430 g)" required>
+  <input type="text" name="marca" placeholder="Marca (opcional)" style="max-width:180px">
+  <input type="number" step="0.01" name="precio" placeholder="Precio" required style="max-width:130px">
+  <input type="number" step="0.01" name="antes" placeholder="“Antes” (opcional)" style="max-width:160px">
+  <button>Guardar</button>
+</form>
+<p class="mut">Pon la presentación (g, kg, ml, l, pzas) en el nombre para calcular el precio unitario.</p>
+{% if filas %}
+<div class="scroll"><table class="tabla">
+<tr><th>Fecha</th><th>Producto</th><th class="num">Precio</th><th class="num">“Antes”</th></tr>
+{% for f in filas %}<tr><td class="mut">{{ f.fecha[:10] }}</td><td><a href="{{ url_for('producto', pid=f.id) }}">{{ f.nombre }}</a> <span class="mut">{{ f.marca }}</span></td>
+<td class="num">{{ f.precio|mxn }}</td><td class="num">{{ f.precio_antes|mxn }}</td></tr>{% endfor %}
+</table></div>
+{% endif %}
+{% endblock %}

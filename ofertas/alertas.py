@@ -12,7 +12,7 @@ from .servicio import buscar
 
 log = logging.getLogger(__name__)
 NOMBRES = {"walmart": "Walmart", "aurrera": "Bodega Aurrera", "heb": "HEB", "chedraui": "Chedraui",
-           "soriana": "Soriana"}
+           "soriana": "Soriana", "grand": "GranD"}
 
 
 def revisar(db: DB, cfg: dict) -> list[str]:

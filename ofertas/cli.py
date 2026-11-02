@@ -25,6 +25,12 @@ def main(argv=None):
     v.add_argument("--objetivo", type=float)
     p = sub.add_parser("importar-profeco", help="importa CSV/ZIP de Quién es Quién en los Precios")
     p.add_argument("archivos", nargs="+")
+    c = sub.add_parser("capturar", help="registra un precio de folleto/anaquel (p. ej. GranD)")
+    c.add_argument("precio", type=float)
+    c.add_argument("producto", nargs="+")
+    c.add_argument("--tienda", default="grand")
+    c.add_argument("--antes", type=float, help="precio 'antes' que anuncia el folleto")
+    c.add_argument("--marca", default="")
     sub.add_parser("config", help="crea config.json editable y muestra su ruta")
     args = ap.parse_args(argv)
 
@@ -65,6 +71,10 @@ def main(argv=None):
     elif args.cmd == "vigilar":
         db.vigilar(" ".join(args.consulta), args.objetivo)
         print("Agregado.")
+    elif args.cmd == "capturar":
+        from .servicio import registrar_captura
+        registrar_captura(db, args.tienda, " ".join(args.producto), args.precio, args.antes, args.marca)
+        print("Precio registrado.")
     elif args.cmd == "importar-profeco":
         from .profeco import importar
         for f in args.archivos:

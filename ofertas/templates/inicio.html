@@ -7,6 +7,9 @@
   {% for clave, cls in TIENDAS.items() %}
     <label><input type="checkbox" name="t" value="{{ clave }}" {% if clave in sel %}checked{% endif %}> {{ cls.nombre }}</label>
   {% endfor %}
+  {% for clave, nom in MANUALES.items() %}
+    <label title="Precios capturados del folleto o anaquel"><input type="checkbox" name="t" value="{{ clave }}" {% if clave in sel %}checked{% endif %}> {{ nom }} ✍</label>
+  {% endfor %}
   </div>
 </form>
 
@@ -35,7 +38,8 @@
       <td>{{ NOMBRES.get(p.tienda, p.tienda) }}</td>
       <td><a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.nombre }}</a>
           {% if not p.disponible %}<span class="tag cara">agotado</span>{% endif %}
-          <br><a class="mut" href="{{ url_for('producto', pid=r.pid) }}">historial</a></td>
+          <br><a class="mut" href="{{ url_for('producto', pid=r.pid) }}">historial</a>
+          {% if p.tienda in MANUALES %}<span class="mut"> · capturado {{ p.fecha.strftime('%d/%m') }}</span>{% endif %}</td>
       <td class="num">{{ p.precio|mxn }}{% if p.precio_antes %}<br><s>{{ p.precio_antes|mxn }}</s> <span class="mut">-{{ p.descuento_anunciado }}%</span>{% endif %}</td>
       <td class="num">{% if r.unitario %}{{ r.unitario[0]|mxn }}/{{ r.unitario[1] }}{% else %}<span class="mut">—</span>{% endif %}</td>
       <td>
@@ -50,6 +54,6 @@
   {% endif %}
   <p class="mut">El veredicto mejora conforme se acumula historial: cada búsqueda y cada revisión de alertas guarda el precio del día.</p>
 {% else %}
-  <p class="mut">Busca un producto para comparar Walmart, Bodega Aurrera, HEB, Chedraui y Soriana. El orden es por precio por kilo, litro o pieza, no por precio de etiqueta.</p>
+  <p class="mut">Busca un producto para comparar Walmart, Bodega Aurrera, HEB, Chedraui, Soriana y GranD (con los precios que captures). El orden es por precio por kilo, litro o pieza, no por precio de etiqueta.</p>
 {% endif %}
 {% endblock %}

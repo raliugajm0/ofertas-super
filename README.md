@@ -1,6 +1,6 @@
 # Ofertas Súper — CP 87130 (Cd. Victoria, Tamaulipas)
 
-Compara precios de **Walmart, Bodega Aurrera, HEB, Chedraui y Soriana**. El orden es por **precio unitario** (kilo, litro o pieza), guarda historial y te avisa solo de las ofertas que **de verdad** valen la pena.
+Compara precios de **Walmart, Bodega Aurrera, HEB, Chedraui, Soriana y GranD**. El orden es por **precio unitario** (kilo, litro o pieza), guarda historial y te avisa solo de las ofertas que **de verdad** valen la pena.
 
 ## Qué hace
 
@@ -10,6 +10,7 @@ Compara precios de **Walmart, Bodega Aurrera, HEB, Chedraui y Soriana**. El orde
 | Veredicto | Compara el precio de hoy con la mediana de los últimos 90 días: **excelente** (mínimo histórico), **buena** (≥15 % abajo), **normal** o **cara**. |
 | Ofertas simuladas | Marca cuando el precio "antes" nunca existió o el "descuento" no baja del precio habitual, y guarda **evidencia fechada** en `~/.ofertas-super/evidencia/`. |
 | Profeco QQP | Importa los datos abiertos de *Quién es Quién en los Precios* filtrados a Victoria, Tamaulipas, como referencia oficial. |
+| GranD | No tiene catálogo en línea. Sus precios se capturan del folleto semanal (Facebook/Instagram/Flipsnack), del anaquel o del ticket, en la página **Capturar GranD** o con `ofertas capturar`. Entran en la comparación por 14 días y alimentan el historial. |
 | Alertas | Lista de vigilancia con precio objetivo opcional y avisos por **Telegram**, **correo** o consola. |
 
 ## Instalación (en tu computadora)
@@ -31,6 +32,7 @@ ofertas buscar aceite 1 l           # comparación en terminal
 ofertas vigilar café nescafé 200 g --objetivo 120
 ofertas alertas                     # revisa la vigilancia una vez
 ofertas alertas --cada 360          # revisa cada 6 horas (déjalo corriendo)
+ofertas capturar 35.90 Aceite Capullo 1 l --antes 42   # precio de GranD
 ofertas importar-profeco QQP_2026.csv
 ofertas config                      # crea ~/.ofertas-super/config.json para editar
 ```

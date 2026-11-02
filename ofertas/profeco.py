@@ -21,7 +21,7 @@ COLUMNAS = ["producto", "presentacion", "marca", "categoria", "catalogo", "preci
             "latitud", "longitud"]
 
 CADENAS = {"walmart": "WALMART", "aurrera": "BODEGA AURRERA", "heb": "HEB", "chedraui": "CHEDRAUI",
-           "soriana": "SORIANA", "lacomer": "LA COMER", "sams": "SAMS"}
+           "soriana": "SORIANA", "grand": "GRAND", "lacomer": "LA COMER", "sams": "SAMS"}
 
 
 def _norm(s: str) -> str:
