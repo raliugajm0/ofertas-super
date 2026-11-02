@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block cuerpo %}
+<h2>Vigilancia y alertas</h2>
+<p class="mut">Te aviso cuando un producto baje a tu precio objetivo o quede {{ cfg.umbral_oferta_pct }}% bajo su precio habitual. Las ofertas con descuento simulado no generan aviso.</p>
+<form class="buscar" method="post">
+  <input type="text" name="consulta" placeholder="Producto a vigilar (ej. café nescafé 200 g)" required>
+  <input type="number" step="0.01" name="objetivo" placeholder="Precio objetivo (opcional)" style="max-width:220px">
+  <button>Agregar</button>
+</form>
+{% if avisos is not none %}
+  <div class="err">{% if avisos %}{{ avisos|length }} aviso(s) enviado(s):<pre style="white-space:pre-wrap">{{ avisos|join('\n\n') }}</pre>{% else %}Sin ofertas nuevas por ahora.{% endif %}</div>
+{% endif %}
+{% if lista %}
+<div class="scroll"><table class="tabla">
+<tr><th>Producto</th><th class="num">Objetivo</th><th></th></tr>
+{% for v in lista %}
+<tr><td><a href="{{ url_for('inicio', q=v.consulta) }}">{{ v.consulta }}</a></td><td class="num">{{ v.precio_objetivo|mxn }}</td>
+<td class="num"><form method="post"><button class="sec" name="borrar" value="{{ v.id }}">Quitar</button></form></td></tr>
+{% endfor %}
+</table></div>
+<form method="post" action="{{ url_for('revisar_ahora') }}" style="margin-top:14px"><button>Revisar ahora</button></form>
+{% else %}<p>Todavía no vigilas ningún producto.</p>{% endif %}
+<p class="mut">Para revisión automática, programa <code>ofertas alertas</code> (ver README) o deja corriendo <code>ofertas alertas --cada 360</code>.</p>
+{% endblock %}

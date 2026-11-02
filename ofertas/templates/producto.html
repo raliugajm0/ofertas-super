@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block cuerpo %}
+<h2>{{ prod.nombre }}</h2>
+<p class="mut">{{ NOMBRES.get(prod.tienda, prod.tienda) }} · {{ prod.marca }} · <a href="{{ prod.url }}" target="_blank" rel="noopener">ver en tienda</a></p>
+{% if hist|length > 1 %}
+  {% set ps = hist|map(attribute='precio')|list %}{% set lo = ps|min %}{% set hi = ps|max %}{% set rng = (hi - lo) or 1 %}
+  <svg viewBox="0 0 600 160" width="100%" style="max-width:700px;background:var(--card);border:1px solid var(--bd);border-radius:10px" role="img" aria-label="Historial de precio">
+    <polyline fill="none" stroke="var(--ac)" stroke-width="2.5" points="{% for h in hist %}{{ 20 + loop.index0 * 560 / (hist|length - 1) }},{{ 140 - (h.precio - lo) * 110 / rng }} {% endfor %}"/>
+    <text x="20" y="18" fill="var(--mut)" font-size="12">máx {{ hi|mxn }}</text>
+    <text x="20" y="156" fill="var(--mut)" font-size="12">mín {{ lo|mxn }}</text>
+  </svg>
+{% endif %}
+<div class="scroll"><table class="tabla" style="margin-top:14px;max-width:700px">
+<tr><th>Fecha</th><th class="num">Precio</th><th class="num">“Antes” anunciado</th></tr>
+{% for h in hist|reverse %}<tr><td>{{ h.fecha[:16].replace('T',' ') }}</td><td class="num">{{ h.precio|mxn }}</td><td class="num">{{ h.precio_antes|mxn }}</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

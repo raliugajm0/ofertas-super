@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block cuerpo %}
+<form class="buscar" method="get">
+  <input type="text" name="q" value="{{ q }}" placeholder="Ej. aceite 1 l, pañales etapa 4, leche lala" autofocus>
+  <button>Comparar</button>
+  <div class="chips" style="width:100%">
+  {% for clave, cls in TIENDAS.items() %}
+    <label><input type="checkbox" name="t" value="{{ clave }}" {% if clave in sel %}checked{% endif %}> {{ cls.nombre }}</label>
+  {% endfor %}
+  </div>
+</form>
+
+{% if b %}
+  {% for t, e in b.errores.items() %}
+    <div class="err"><b>{{ NOMBRES.get(t, t) }}</b> no respondió: {{ e }}</div>
+  {% endfor %}
+
+  {% if b.referencia_profeco %}
+  <h3>Referencia Profeco (levantamiento en tu municipio)</h3>
+  <div class="scroll"><table class="tabla">
+    <tr><th>Cadena</th><th>Producto</th><th class="num">Precio mín.</th><th class="oculto-movil">Fecha</th></tr>
+    {% for f in b.referencia_profeco %}
+    <tr><td>{{ NOMBRES.get(f.tienda[8:], f.tienda[8:]) }}</td><td>{{ f.nombre }} <span class="mut">{{ f.marca }}</span></td>
+        <td class="num">{{ f.minimo|mxn }}</td><td class="mut oculto-movil">{{ f.fecha[:10] }}</td></tr>
+    {% endfor %}
+  </table></div>
+  {% endif %}
+
+  <h3>{{ b.resultados|length }} resultados para “{{ b.consulta }}” <span class="mut">— ordenados por precio unitario</span></h3>
+  {% if b.resultados %}
+  <div class="scroll"><table class="tabla">
+    <tr><th>Tienda</th><th>Producto</th><th class="num">Precio</th><th class="num">Por unidad</th><th>¿Vale la pena?</th></tr>
+    {% for r in b.resultados %}{% set p = r.producto %}{% set v = r.veredicto %}
+    <tr>
+      <td>{{ NOMBRES.get(p.tienda, p.tienda) }}</td>
+      <td><a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.nombre }}</a>
+          {% if not p.disponible %}<span class="tag cara">agotado</span>{% endif %}
+          <br><a class="mut" href="{{ url_for('producto', pid=r.pid) }}">historial</a></td>
+      <td class="num">{{ p.precio|mxn }}{% if p.precio_antes %}<br><s>{{ p.precio_antes|mxn }}</s> <span class="mut">-{{ p.descuento_anunciado }}%</span>{% endif %}</td>
+      <td class="num">{% if r.unitario %}{{ r.unitario[0]|mxn }}/{{ r.unitario[1] }}{% else %}<span class="mut">—</span>{% endif %}</td>
+      <td>
+        <span class="tag {{ v.calificacion.split()[0] }}">{{ v.calificacion }}</span>
+        {% if v.ahorro_vs_mediana_pct is not none %}<div class="mut">{{ v.ahorro_vs_mediana_pct }}% vs. habitual {{ v.mediana|mxn }} ({{ v.observaciones }} reg.)</div>{% endif %}
+        {% for a in v.alertas %}<div class="tag alerta" style="margin-top:4px;white-space:normal">⚠ {{ a }}</div>{% endfor %}
+        {% if r.evidencia %}<div class="mut">Evidencia guardada</div>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  {% endif %}
+  <p class="mut">El veredicto mejora conforme se acumula historial: cada búsqueda y cada revisión de alertas guarda el precio del día.</p>
+{% else %}
+  <p class="mut">Busca un producto para comparar Walmart, Bodega Aurrera, HEB, Chedraui y Soriana. El orden es por precio por kilo, litro o pieza, no por precio de etiqueta.</p>
+{% endif %}
+{% endblock %}

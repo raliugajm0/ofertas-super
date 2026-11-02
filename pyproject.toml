@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ofertas-super"
+version = "0.1.0"
+description = "Comparador de ofertas de supermercado (Walmart, Bodega Aurrera, HEB, Chedraui, Soriana) con historial y alertas"
+requires-python = ">=3.10"
+dependencies = ["flask>=3.0", "requests>=2.31"]
+
+[project.optional-dependencies]
+navegador = ["playwright>=1.40"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+ofertas = "ofertas.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["ofertas*"]
+
+[tool.setuptools.package-data]
+ofertas = ["templates/*.html"]

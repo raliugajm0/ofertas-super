@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}Ofertas Súper{% endblock %}</title>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--tx:#1d1d1b;--mut:#6b6b66;--bd:#e3e3df;--ac:#0b6e4f;--ok:#0b6e4f;--okbg:#e3f4ec;
+--wa:#9a5b00;--wabg:#fff1d6;--bad:#a4262c;--badbg:#fde7e8}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--card:#1e1e1c;--tx:#ecebe7;--mut:#a3a29c;--bd:#33332f;
+--ac:#4cc79a;--ok:#4cc79a;--okbg:#173327;--wa:#f0b453;--wabg:#3a2c12;--bad:#ff8a8f;--badbg:#3d1c1e}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--bd)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+nav{display:flex;gap:18px;align-items:center;height:56px;flex-wrap:wrap}
+nav b{font-size:17px;margin-right:auto}nav a{color:var(--mut);text-decoration:none}nav a:hover{color:var(--ac)}
+main{padding:20px 0 60px}
+form.buscar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+input[type=text],input[type=number]{flex:1;min-width:160px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font-size:15px}
+button{padding:10px 16px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-weight:600;cursor:pointer}
+button.sec{background:transparent;color:var(--bad);border:1px solid var(--bd);padding:6px 10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}.chips label{border:1px solid var(--bd);border-radius:20px;padding:4px 10px;background:var(--card);font-size:13px}
+.tabla{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+.tabla th,.tabla td{padding:9px 10px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+.tabla th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+.num{text-align:right!important;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:12px;font-weight:600}
+.excelente,.buena{background:var(--okbg);color:var(--ok)}.cara{background:var(--badbg);color:var(--bad)}
+.normal,.sin{background:var(--bg);color:var(--mut)}.alerta{background:var(--wabg);color:var(--wa)}
+.mut{color:var(--mut);font-size:13px}.err{background:var(--wabg);color:var(--wa);padding:8px 12px;border-radius:8px;margin:8px 0;font-size:13px}
+a{color:var(--ac)}s{color:var(--mut)}
+.scroll{overflow-x:auto}
+@media (max-width:640px){.oculto-movil{display:none}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><nav>
+<b>🛒 Ofertas Súper</b>
+<a href="{{ url_for('inicio') }}">Buscar</a>
+<a href="{{ url_for('ofertas') }}">Ofertas reales</a>
+<a href="{{ url_for('vigilancia') }}">Vigilancia y alertas</a>
+<span class="mut">CP {{ cfg.codigo_postal }}</span>
+</nav></div></header>
+<main class="wrap">{% block cuerpo %}{% endblock %}</main>
+</body>
+</html>

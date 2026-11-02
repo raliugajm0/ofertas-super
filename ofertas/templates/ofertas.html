@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block cuerpo %}
+<h2>Ofertas reales de los últimos 2 días</h2>
+<p class="mut">Sólo productos con al menos {{ cfg.umbral_oferta_pct }}% bajo su precio habitual, o con indicios de descuento simulado.</p>
+{% if filas %}
+<div class="scroll"><table class="tabla">
+<tr><th>Tienda</th><th>Producto</th><th class="num">Precio</th><th class="num">Habitual</th><th>Veredicto</th></tr>
+{% for f, p, v in filas %}
+<tr><td>{{ NOMBRES.get(p.tienda, p.tienda) }}</td>
+<td><a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.nombre }}</a><br><a class="mut" href="{{ url_for('producto', pid=f.id) }}">historial</a></td>
+<td class="num">{{ p.precio|mxn }}</td><td class="num">{{ v.mediana|mxn }}</td>
+<td><span class="tag {{ v.calificacion.split()[0] }}">{{ v.calificacion }} {% if v.ahorro_vs_mediana_pct %}{{ v.ahorro_vs_mediana_pct }}%{% endif %}</span>
+{% for a in v.alertas %}<div class="tag alerta" style="margin-top:4px;white-space:normal">⚠ {{ a }}</div>{% endfor %}</td></tr>
+{% endfor %}
+</table></div>
+{% else %}
+<p>Aún no hay suficiente historial. Agrega productos a <a href="{{ url_for('vigilancia') }}">vigilancia</a> y deja que el programa los revise a diario.</p>
+{% endif %}
+{% endblock %}
