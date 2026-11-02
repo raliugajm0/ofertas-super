@@ -30,6 +30,8 @@ button.sec{background:transparent;color:var(--bad);border:1px solid var(--bd);pa
 .mut{color:var(--mut);font-size:13px}.err{background:var(--wabg);color:var(--wa);padding:8px 12px;border-radius:8px;margin:8px 0;font-size:13px}
 a{color:var(--ac)}s{color:var(--mut)}
 .scroll{overflow-x:auto}
+.caja{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:4px 18px 16px;margin-bottom:18px}
+.pasos li{margin-bottom:10px}button:disabled{opacity:.5;cursor:default}
 @media (max-width:640px){.oculto-movil{display:none}}
 </style>
 </head>
@@ -40,6 +42,7 @@ a{color:var(--ac)}s{color:var(--mut)}
 <a href="{{ url_for('ofertas') }}">Ofertas reales</a>
 <a href="{{ url_for('vigilancia') }}">Vigilancia y alertas</a>
 <a href="{{ url_for('captura') }}">Capturar GranD</a>
+<a href="{{ url_for('ajustes') }}">Ajustes</a>
 <span class="mut">CP {{ cfg.codigo_postal }}</span>
 </nav></div></header>
 <main class="wrap">{% block cuerpo %}{% endblock %}</main>

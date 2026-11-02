@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block cuerpo %}
+<h2>Ajustes</h2>
+{% if ok %}<div class="err" style="background:var(--okbg);color:var(--ok)">{{ ok }}</div>{% endif %}
+{% if error %}<div class="err" style="background:var(--badbg);color:var(--bad)">{{ error }}</div>{% endif %}
+
+<section class="caja">
+<h3>1. Alertas en tu Telegram {% if cfg.telegram_token and cfg.telegram_chat_id %}<span class="tag buena">conectado</span>{% else %}<span class="tag normal">sin conectar</span>{% endif %}</h3>
+<ol class="pasos">
+  <li>En Telegram busca <b>@BotFather</b>, envíale <code>/newbot</code>, ponle un nombre (ej. <i>Mis Ofertas</i>) y un usuario que termine en <i>bot</i>.</li>
+  <li>Copia el <b>token</b> que te responde y pégalo aquí:
+    <form class="buscar" method="post" style="margin-top:8px">
+      <input type="hidden" name="accion" value="token">
+      <input type="text" name="token" placeholder="123456789:AAH..." value="{{ cfg.telegram_token }}" autocomplete="off">
+      <button>Guardar token</button>
+    </form></li>
+  <li>Abre tu bot{% if cfg.telegram_bot %} (<a href="https://t.me/{{ cfg.telegram_bot }}" target="_blank" rel="noopener">t.me/{{ cfg.telegram_bot }}</a>){% endif %}, toca <b>INICIAR</b> y después:
+    <form method="post" style="display:inline"><input type="hidden" name="accion" value="detectar">
+      <button {% if not cfg.telegram_token %}disabled{% endif %}>Detectar mi chat</button></form></li>
+</ol>
+{% if cfg.telegram_chat_id %}
+<form method="post"><input type="hidden" name="accion" value="prueba"><button class="sec" style="color:var(--ac)">Enviar mensaje de prueba</button></form>
+{% endif %}
+</section>
+
+<section class="caja">
+<h3>2. Revisión automática diaria {% if programado %}<span class="tag buena">activa: {{ programado|join(', ') }}</span>{% else %}<span class="tag normal">apagada</span>{% endif %}</h3>
+<p class="mut">Tu computadora revisa los productos en vigilancia a estas horas, guarda el precio del día (eso arma el historial) y te avisa si hay algo bueno. Debe estar encendida a esa hora; si estaba apagada, revisa en la siguiente.</p>
+<form method="post">
+  <input type="hidden" name="accion" value="programar">
+  <div class="chips">
+  {% for h in [7, 8, 9, 12, 14, 17, 19, 21] %}
+    <label><input type="checkbox" name="hora" value="{{ h }}" {% if ('%02d:00' % h) in programado or (not programado and h in [8, 19]) %}checked{% endif %}> {{ '%02d:00' % h }}</label>
+  {% endfor %}
+  </div>
+  <button>Programar</button>
+</form>
+{% if programado %}<form method="post" style="margin-top:8px"><input type="hidden" name="accion" value="quitar"><button class="sec">Desactivar</button></form>{% endif %}
+{% if bitacora %}
+<h4>Últimas revisiones</h4>
+<pre class="mut" style="white-space:pre-wrap">{{ bitacora|join('\n') }}</pre>
+{% endif %}
+</section>
+{% endblock %}

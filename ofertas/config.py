@@ -36,6 +36,15 @@ def cargar() -> dict:
     return cfg
 
 
+def guardar(cambios: dict) -> Path:
+    """Actualiza sólo las llaves indicadas en config.json, conservando lo demás."""
+    archivo = BASE / "config.json"
+    actual = json.loads(archivo.read_text(encoding="utf-8")) if archivo.exists() else dict(_DEFAULT)
+    actual.update(cambios)
+    archivo.write_text(json.dumps(actual, indent=2, ensure_ascii=False), encoding="utf-8")
+    return archivo
+
+
 def guardar_plantilla() -> Path:
     archivo = BASE / "config.json"
     if not archivo.exists():
@@ -45,3 +54,4 @@ def guardar_plantilla() -> Path:
 
 DB_PATH = BASE / "precios.sqlite3"
 EVIDENCIA_DIR = BASE / "evidencia"
+LOG_PATH = BASE / "alertas.log"

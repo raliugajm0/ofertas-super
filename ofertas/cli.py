@@ -31,6 +31,13 @@ def main(argv=None):
     c.add_argument("--tienda", default="grand")
     c.add_argument("--antes", type=float, help="precio 'antes' que anuncia el folleto")
     c.add_argument("--marca", default="")
+    tg = sub.add_parser("telegram", help="asistente para conectar las alertas a tu Telegram")
+    tg.add_argument("--token", help="token que te dio @BotFather")
+    sub.add_parser("probar-alerta", help="envía un mensaje de prueba a tus canales configurados")
+    pr = sub.add_parser("programar", help="revisión automática diaria (Windows, Mac o Linux)")
+    pr.add_argument("horas", nargs="*", type=int, help="horas del día, p. ej. 8 19 (por defecto 8 y 19)")
+    pr.add_argument("--quitar", action="store_true", help="desactiva la revisión automática")
+    pr.add_argument("--estado", action="store_true", help="muestra los horarios programados")
     sub.add_parser("config", help="crea config.json editable y muestra su ruta")
     args = ap.parse_args(argv)
 
@@ -39,6 +46,29 @@ def main(argv=None):
 
     if args.cmd == "config":
         print(f"Edita: {config.guardar_plantilla()}")
+        return
+    if args.cmd == "telegram":
+        return asistente_telegram(args.token)
+    if args.cmd == "probar-alerta":
+        from .alertas import enviar
+        enviar("✅ Prueba de Ofertas Súper: las alertas están funcionando.", cfg)
+        print("Enviado (si no configuraste Telegram ni correo, se muestra aquí arriba).")
+        return
+    if args.cmd == "programar":
+        from . import programador
+        if args.estado:
+            h = programador.estado()
+            print("Programado a las: " + ", ".join(h) if h else "No hay revisión automática programada.")
+        elif args.quitar:
+            print(programador.quitar())
+        else:
+            try:
+                print(programador.programar(args.horas or [8, 19]))
+                print(f"Bitácora de cada revisión: {config.LOG_PATH}")
+            except (ValueError, RuntimeError, OSError) as e:
+                print(f"✗ No pude programar la revisión: {e}")
+            except Exception as e:  # noqa: BLE001 - schtasks/crontab con error
+                print(f"✗ No pude programar la revisión: {type(e).__name__}: {e}")
         return
     db = DB(config.DB_PATH)
 
@@ -63,8 +93,14 @@ def main(argv=None):
     elif args.cmd == "alertas":
         from .alertas import revisar
         while True:
-            n = revisar(db, cfg)
-            print(f"{time.strftime('%Y-%m-%d %H:%M')} — {len(n)} aviso(s)")
+            try:
+                n = revisar(db, cfg)
+                linea = f"{time.strftime('%Y-%m-%d %H:%M')} — {len(n)} aviso(s)"
+            except Exception as e:  # noqa: BLE001 - que la tarea programada deje rastro
+                linea = f"{time.strftime('%Y-%m-%d %H:%M')} — ERROR {type(e).__name__}: {e}"
+            print(linea)
+            with open(config.LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(linea + "\n")
             if not args.cada:
                 break
             time.sleep(args.cada * 60)
@@ -79,6 +115,27 @@ def main(argv=None):
         from .profeco import importar
         for f in args.archivos:
             print(f"{f}: {importar(f, db, cfg)} registros de {cfg['municipio']}, {cfg['estado']}")
+
+
+def asistente_telegram(token: str | None = None) -> None:
+    from . import telegram
+    print("1) En Telegram busca @BotFather, envíale /newbot y sigue las instrucciones.")
+    print("2) Copia el token que te entrega (se ve como 123456789:AAH...).")
+    token = (token or input("Pega aquí el token: ")).strip()
+    try:
+        bot = telegram.validar_bot(token)
+    except telegram.ErrorTelegram as e:
+        print(f"✗ {e}")
+        return
+    print(f"✓ Bot válido: @{bot}")
+    print(f"3) Abre https://t.me/{bot} en tu celular, toca INICIAR (o envíale 'hola'). Espero hasta 2 minutos...")
+    chat = telegram.detectar_chat(token, espera_seg=120)
+    if not chat:
+        print("✗ No recibí tu mensaje. Escríbele al bot y vuelve a correr: ofertas telegram")
+        return
+    config.guardar({"telegram_token": token, "telegram_chat_id": chat[0]})
+    telegram.enviar(token, chat[0], "✅ Listo. Aquí te avisaré de las ofertas que valen la pena.")
+    print(f"✓ Conectado con {chat[1] or 'tu chat'}. Te envié un mensaje de prueba.")
 
 
 if __name__ == "__main__":

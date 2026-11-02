@@ -135,3 +135,88 @@ def test_grand_captura(tmp_path, monkeypatch):
     assert html.index("Capullo") < html.index("Patrona")  # GranD más barato por litro
     # si no se selecciona GranD, no aparece
     assert "Capullo" not in app.get("/?q=aceite&t=heb").get_data(as_text=True)
+
+
+# ---------- Telegram ----------
+class _Resp:
+    def __init__(self, data, status=200):
+        self._d, self.status_code = data, status
+
+    def json(self):
+        return self._d
+
+
+def test_telegram(monkeypatch):
+    from ofertas import telegram
+    enviados = []
+
+    def post(url, data=None, timeout=None):
+        metodo = url.rsplit("/", 1)[-1]
+        if "MALO" in url:
+            return _Resp({"ok": False, "description": "Unauthorized"}, 401)
+        if metodo == "getMe":
+            return _Resp({"ok": True, "result": {"username": "MisOfertasBot"}})
+        if metodo == "getUpdates":
+            return _Resp({"ok": True, "result": [
+                {"update_id": 1, "message": {"chat": {"id": 555, "first_name": "Ana"}, "text": "/start"}}]})
+        enviados.append(data)
+        return _Resp({"ok": True, "result": {}})
+
+    monkeypatch.setattr(telegram.requests, "post", post)
+    assert telegram.validar_bot("123:abc") == "MisOfertasBot"
+    with pytest.raises(telegram.ErrorTelegram, match="token no es válido"):
+        telegram.validar_bot("MALO")
+    assert telegram.detectar_chat("123:abc") == ("555", "Ana")
+    telegram.enviar("123:abc", "555", "hola")
+    assert enviados[-1]["chat_id"] == "555"
+
+
+# ---------- Programador ----------
+def test_programador_cron_y_windows(monkeypatch):
+    from ofertas import programador
+    lineas = programador.lineas_cron([19, 8, 8])
+    assert len(lineas) == 2 and lineas[0].startswith("0 8 * * * ") and "-m ofertas.cli alertas" in lineas[0]
+    actual = "MAILTO=x\n30 2 * * * respaldo.sh\n0 7 * * * viejo # ofertas-super\n"
+    nuevo = programador.fusionar_cron(actual, lineas)
+    assert "respaldo.sh" in nuevo and "viejo" not in nuevo and nuevo.count(programador.MARCA) == 2
+    assert programador.MARCA not in programador.fusionar_cron(nuevo, [])
+    cmds = programador.comandos_windows([8])
+    assert cmds[0][:2] == ["schtasks", "/Create"] and "08:00" in cmds[0] and "OfertasSuper-08" in cmds[0]
+    with pytest.raises(ValueError):
+        programador.lineas_cron([25])
+
+
+def test_programar_cron_simulado(monkeypatch):
+    from ofertas import programador
+    cron = {"t": "30 2 * * * respaldo.sh\n"}
+    monkeypatch.setattr(programador.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(programador.shutil, "which", lambda x: "/usr/bin/crontab")
+    monkeypatch.setattr(programador, "_leer_cron", lambda: cron["t"])
+    monkeypatch.setattr(programador, "_escribir_cron", lambda t: cron.update(t=t))
+    programador.programar([8, 19])
+    assert programador.estado() == ["08:00", "19:00"] and "respaldo.sh" in cron["t"]
+    programador.quitar()
+    assert programador.estado() == [] and "respaldo.sh" in cron["t"]
+
+
+def test_web_ajustes(tmp_path, monkeypatch):
+    from ofertas import programador, telegram
+    from ofertas.web import crear_app
+    monkeypatch.setattr(config, "BASE", tmp_path)
+    monkeypatch.setattr(config, "LOG_PATH", tmp_path / "alertas.log")
+    monkeypatch.setattr(telegram, "validar_bot", lambda t: "MisOfertasBot")
+    monkeypatch.setattr(telegram, "detectar_chat", lambda t, espera_seg=0: ("555", "Ana"))
+    enviados = []
+    monkeypatch.setattr(telegram, "enviar", lambda t, c, m: enviados.append((c, m)))
+    horas = {}
+    monkeypatch.setattr(programador, "programar", lambda h: horas.update(h=h) or "ok programado")
+    monkeypatch.setattr(programador, "estado", lambda: [f"{h:02d}:00" for h in horas.get("h", [])])
+    cfg = dict(CFG)
+    app = crear_app(DB(tmp_path / "a.db"), cfg).test_client()
+    assert "sin conectar" in app.get("/ajustes").get_data(as_text=True)
+    assert "@MisOfertasBot" in app.post("/ajustes", data={"accion": "token", "token": "1:a"}).get_data(as_text=True)
+    html = app.post("/ajustes", data={"accion": "detectar"}).get_data(as_text=True)
+    assert "Conectado con Ana" in html and enviados[-1][0] == "555"
+    assert json.loads((tmp_path / "config.json").read_text())["telegram_chat_id"] == "555"
+    html = app.post("/ajustes", data={"accion": "programar", "hora": ["8", "19"]}).get_data(as_text=True)
+    assert horas["h"] == [8, 19] and "activa: 08:00, 19:00" in html

@@ -37,14 +37,22 @@ ofertas importar-profeco QQP_2026.csv
 ofertas config                      # crea ~/.ofertas-super/config.json para editar
 ```
 
-### Revisión automática diaria
-- **Windows**: Programador de tareas → Acción: `C:\ruta\ofertas-super\.venv\Scripts\ofertas.exe alertas`
-- **Mac/Linux** (`crontab -e`): `0 8,19 * * * /ruta/ofertas-super/.venv/bin/ofertas alertas`
+### Alertas en tu Telegram (5 minutos)
+**Desde la página:** abre `ofertas web` → **Ajustes** y sigue los 3 pasos (token de @BotFather, INICIAR el bot, «Detectar mi chat»).
+**Desde la terminal:** `ofertas telegram` (te guía y envía un mensaje de prueba). Para comprobar después: `ofertas probar-alerta`.
 
-### Alertas por Telegram
-1. En Telegram, habla con **@BotFather** → `/newbot` y copia el *token*.
-2. Escríbele cualquier cosa a tu bot y abre `https://api.telegram.org/bot<TOKEN>/getUpdates` para obtener tu `chat_id`.
-3. Ponlos en `config.json` (`telegram_token`, `telegram_chat_id`).
+### Revisión automática diaria
+**Desde la página:** **Ajustes** → elige horarios → **Programar**.
+**Desde la terminal:**
+```bash
+ofertas programar            # diario 08:00 y 19:00
+ofertas programar 7 13 20    # tus horarios
+ofertas programar --estado   # ver qué está programado
+ofertas programar --quitar   # desactivar
+```
+- **Windows** crea tareas `OfertasSuper-HH` en el Programador de tareas, sin ventana visible.
+- **Mac / Linux** agrega líneas a tu `crontab` marcadas con `# ofertas-super`; no toca tus otras tareas. En Mac, si macOS pide permiso para `cron`, acéptalo.
+- La computadora debe estar encendida a esa hora. Cada revisión queda anotada en `~/.ofertas-super/alertas.log`, que también puedes ver en Ajustes.
 
 ## Configuración (`~/.ofertas-super/config.json`)
 - `tiendas`: cuáles consultar.

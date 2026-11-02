@@ -66,6 +66,49 @@ def crear_app(db: DB | None = None, cfg: dict | None = None) -> Flask:
         return render_template("captura.html", filas=recientes_manual(D()), aviso=aviso,
                                ok=request.args.get("ok"), cfg=C())
 
+    @app.route("/ajustes", methods=["GET", "POST"])
+    def ajustes():
+        from . import programador, telegram
+        ok = error = None
+        if request.method == "POST":
+            accion = request.form.get("accion")
+            cfg = C()
+            try:
+                if accion == "token":
+                    token = request.form.get("token", "").strip()
+                    bot = telegram.validar_bot(token)
+                    config.guardar({"telegram_token": token, "telegram_bot": bot})
+                    cfg.update(telegram_token=token, telegram_bot=bot)
+                    ok = f"Bot @{bot} conectado. Ahora abre el bot en Telegram, toca INICIAR y luego «Detectar mi chat»."
+                elif accion == "detectar":
+                    chat = telegram.detectar_chat(cfg.get("telegram_token", ""))
+                    if not chat:
+                        error = "Aún no veo tu mensaje. Abre el bot en Telegram, toca INICIAR o escríbele «hola», y vuelve a intentar."
+                    else:
+                        config.guardar({"telegram_chat_id": chat[0]})
+                        cfg["telegram_chat_id"] = chat[0]
+                        telegram.enviar(cfg["telegram_token"], chat[0],
+                                        "✅ Listo. Aquí te avisaré de las ofertas que valen la pena.")
+                        ok = f"Conectado con {chat[1] or 'tu chat'}. Revisa tu Telegram: te llegó un mensaje de prueba."
+                elif accion == "prueba":
+                    telegram.enviar(cfg.get("telegram_token", ""), cfg.get("telegram_chat_id", ""),
+                                    "✅ Prueba de Ofertas Súper: las alertas están funcionando.")
+                    ok = "Mensaje de prueba enviado."
+                elif accion == "programar":
+                    horas = [int(h) for h in request.form.getlist("hora")]
+                    ok = programador.programar(horas)
+                elif accion == "quitar":
+                    ok = programador.quitar()
+            except (telegram.ErrorTelegram, ValueError, RuntimeError, OSError) as e:
+                error = str(e)
+            except Exception as e:  # noqa: BLE001 - p. ej. schtasks/crontab con error
+                error = f"{type(e).__name__}: {e}"
+        bitacora = []
+        if config.LOG_PATH.exists():
+            bitacora = config.LOG_PATH.read_text(encoding="utf-8").splitlines()[-10:][::-1]
+        return render_template("ajustes.html", ok=ok, error=error, cfg=C(),
+                               programado=programador.estado(), bitacora=bitacora)
+
     @app.get("/producto/<int:pid>")
     def producto(pid):
         prod = D().producto(pid) or abort(404)

@@ -5,8 +5,7 @@ import logging
 import smtplib
 from email.message import EmailMessage
 
-import requests
-
+from . import telegram
 from .db import DB
 from .servicio import buscar
 
@@ -42,11 +41,9 @@ def enviar(texto: str, cfg: dict) -> None:
     enviado = False
     if cfg.get("telegram_token") and cfg.get("telegram_chat_id"):
         try:
-            requests.post(f"https://api.telegram.org/bot{cfg['telegram_token']}/sendMessage",
-                          data={"chat_id": cfg["telegram_chat_id"], "text": texto[:4000],
-                                "disable_web_page_preview": True}, timeout=20).raise_for_status()
+            telegram.enviar(cfg["telegram_token"], cfg["telegram_chat_id"], texto)
             enviado = True
-        except requests.RequestException as e:
+        except telegram.ErrorTelegram as e:
             log.error("Telegram falló: %s", e)
     smtp = cfg.get("smtp") or {}
     if smtp.get("host") and smtp.get("para"):
