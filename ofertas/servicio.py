@@ -32,10 +32,21 @@ class Busqueda:
     referencia_profeco: list
     bloqueadas: list[str] = field(default_factory=list)  # tiendas con antibot (recientes)
 
-    def grupos(self) -> list[tuple[str, list[Resultado]]]:
-        """Resultados agrupados por unidad comparable; el grupo más numeroso primero."""
+    def exactos(self) -> list[Resultado]:
+        """Resultados que contienen todas las palabras buscadas (si no hay ninguno, todos)."""
+        ex = [r for r in self.resultados
+              if _palabras_coinciden(self.consulta, f"{r.producto.nombre} {r.producto.marca}")]
+        return ex or self.resultados
+
+    @property
+    def parecidos(self) -> int:
+        return len(self.resultados) - len(self.exactos())
+
+    def grupos(self, todos: bool = False) -> list[tuple[str, list[Resultado]]]:
+        """Resultados agrupados por unidad comparable; el grupo más numeroso primero.
+        Por defecto sólo los que coinciden con todas las palabras buscadas."""
         g: dict[str, list[Resultado]] = {}
-        for r in self.resultados:
+        for r in (self.resultados if todos else self.exactos()):
             g.setdefault(r.unitario[1] if r.unitario else "", []).append(r)
         orden = sorted(g, key=lambda u: (u == "", -len(g[u])))
         return [(ETIQUETAS.get(u, u), g[u]) for u in orden]
@@ -45,9 +56,14 @@ ETIQUETAS = {"l": "Por litro", "kg": "Por kilo", "pz": "Por pieza", "": "Sin pre
 HORAS_BLOQUEO = 24
 
 
+def _sin_acentos(s: str) -> str:
+    import unicodedata
+    return unicodedata.normalize("NFKD", s.lower()).encode("ascii", "ignore").decode()
+
+
 def _palabras_coinciden(consulta: str, nombre: str) -> bool:
-    n = nombre.lower()
-    return all(w in n for w in consulta.lower().split() if len(w) > 2 and not w[0].isdigit())
+    n = _sin_acentos(nombre)
+    return all(w in n for w in _sin_acentos(consulta).split() if len(w) > 2 and not w[0].isdigit())
 
 
 def buscar(consulta: str, db: DB, cfg: dict, tiendas: list[str] | None = None, limite: int = 20) -> Busqueda:

@@ -33,8 +33,12 @@
   </table></div>
   {% endif %}
 
-  <h3>{{ b.resultados|length }} resultados para “{{ b.consulta }}”</h3>
-  {% for etiqueta, grupo in b.grupos() %}
+  {% set n = b.resultados|length if todos else b.resultados|length - b.parecidos %}
+  <h3>{{ n }} resultados para “{{ b.consulta }}”
+    {% if b.parecidos %}<span class="mut">·
+      {% if todos %}<a href="{{ request.full_path|replace('&todos=1','') }}">ocultar {{ b.parecidos }} parecido{{ "s" if b.parecidos > 1 }}</a>
+      {% else %}<a href="{{ request.full_path }}&todos=1">ver también {{ b.parecidos }} parecido{{ "s" if b.parecidos > 1 }}</a>{% endif %}</span>{% endif %}</h3>
+  {% for etiqueta, grupo in b.grupos(todos) %}
   <h4 style="margin:18px 0 8px">{{ etiqueta }} <span class="mut">({{ grupo|length }}) — del más barato al más caro</span></h4>
   <div class="scroll"><table class="tabla">
     <tr><th>Tienda</th><th>Producto</th><th class="num">Precio</th><th class="num">Por unidad</th><th>¿Vale la pena?</th></tr>

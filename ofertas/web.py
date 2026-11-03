@@ -32,7 +32,8 @@ def crear_app(db: DB | None = None, cfg: dict | None = None) -> Flask:
         q = request.args.get("q", "").strip()
         sel = request.args.getlist("t") or C()["tiendas"]
         b = buscar(q, D(), C(), sel) if q else None
-        return render_template("inicio.html", q=q, b=b, sel=sel, cfg=C())
+        todos = request.args.get("todos") == "1"
+        return render_template("inicio.html", q=q, b=b, sel=sel, cfg=C(), todos=todos)
 
     @app.get("/ofertas")
     def ofertas():

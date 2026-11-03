@@ -365,3 +365,17 @@ def test_profeco_clubes_y_heb(tmp_path):
     assert importar(csv, db, {**CFG, "tiendas": ["chedraui"]}) == 4  # no depende de la búsqueda automática
     tiendas = {r[0] for r in db.c.execute("SELECT tienda FROM productos")}
     assert tiendas == {"profeco:sams", "profeco:cityclub", "profeco:heb", "profeco:soriana"}
+
+
+def test_filtra_parecidos(tmp_path, monkeypatch):
+    class Sams(Falsa):
+        def buscar(self, q, limite=20):
+            return [Producto("sams", "1", "Leche Deslactosada Alpura 12 pzas de 1 l", 316.1),
+                    Producto("sams", "2", "Leche Evaporada Carnation Clavel Nestlé 4 pzas de 944.3 ml", 191.3)]
+
+    monkeypatch.setitem(TIENDAS, "sams", Sams)
+    from ofertas.web import crear_app
+    app = crear_app(DB(tmp_path / "f.db"), {**CFG, "tiendas": ["sams"]}).test_client()
+    html = app.get("/?q=leche+clavel&t=sams").get_data(as_text=True)
+    assert "Carnation" in html and "Alpura" not in html and "ver también 1 parecido<" in html
+    assert "Alpura" in app.get("/?q=leche+clavel&t=sams&todos=1").get_data(as_text=True)

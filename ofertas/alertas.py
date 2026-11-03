@@ -19,7 +19,7 @@ def revisar(db: DB, cfg: dict) -> list[str]:
     mensajes = []
     for vig in db.vigilancias():
         b = buscar(vig["consulta"], db, cfg)
-        for r in b.resultados:
+        for r in b.exactos():  # sólo productos que contienen todas las palabras vigiladas
             p, v = r.producto, r.veredicto
             if not p.disponible:
                 continue
