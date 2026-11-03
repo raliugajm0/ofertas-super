@@ -220,3 +220,37 @@ def test_web_ajustes(tmp_path, monkeypatch):
     assert json.loads((tmp_path / "config.json").read_text())["telegram_chat_id"] == "555"
     html = app.post("/ajustes", data={"accion": "programar", "hora": ["8", "19"]}).get_data(as_text=True)
     assert horas["h"] == [8, 19] and "activa: 08:00, 19:00" in html
+
+
+class _R:
+    def __init__(self, texto, tipo="text/html", status=200):
+        self.text, self.status_code, self.headers = texto, status, {"Content-Type": tipo}
+
+    def json(self):
+        return json.loads(self.text)
+
+
+def test_vtex_rutas_alternas(monkeypatch):
+    """Si la API de catálogo devuelve HTML (antibot o deshabilitada), usa Intelligent Search."""
+    prod = {"productName": "Leche Lala 1 l", "items": [{"itemId": "7", "sellers": [
+        {"commertialOffer": {"Price": 27.5, "ListPrice": 27.5, "IsAvailable": True}}]}]}
+
+    def get(self, url, **kw):
+        if "catalog_system" in url:
+            return _R("<html>Access denied</html>")
+        if "intelligent-search" in url:
+            return _R(json.dumps({"products": [prod]}), "application/json")
+        raise AssertionError(url)
+
+    monkeypatch.setattr(vtex.VTEX, "get", get)
+    ps = vtex.HEB(CFG).buscar("leche")
+    assert ps[0].nombre == "Leche Lala 1 l" and ps[0].precio == 27.5
+
+
+def test_vtex_error_explicativo(monkeypatch):
+    monkeypatch.setattr(vtex.VTEX, "get", lambda self, url, **kw: _R("<html>captcha-like</html>"))
+    monkeypatch.setattr(vtex.VTEX, "html", lambda self, url: "<html>sin datos</html>")
+    with pytest.raises(vtex.SinDatos) as e:
+        vtex.HEB(CFG).buscar("leche")
+    msg = str(e.value)
+    assert "ruta_catalogo" in msg and "ruta_intelligent_search" in msg and "HTTP 200, text/html" in msg

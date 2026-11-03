@@ -38,6 +38,9 @@ def main(argv=None):
     pr.add_argument("horas", nargs="*", type=int, help="horas del día, p. ej. 8 19 (por defecto 8 y 19)")
     pr.add_argument("--quitar", action="store_true", help="desactiva la revisión automática")
     pr.add_argument("--estado", action="store_true", help="muestra los horarios programados")
+    dg = sub.add_parser("diagnosticar", help="guarda lo que responde una tienda para ajustar su lectura")
+    dg.add_argument("tienda")
+    dg.add_argument("consulta", nargs="*", default=["leche"])
     sub.add_parser("config", help="crea config.json editable y muestra su ruta")
     args = ap.parse_args(argv)
 
@@ -46,6 +49,11 @@ def main(argv=None):
 
     if args.cmd == "config":
         print(f"Edita: {config.guardar_plantilla()}")
+        return
+    if args.cmd == "diagnosticar":
+        from .diagnostico import diagnosticar
+        ruta = diagnosticar(args.tienda, " ".join(args.consulta))
+        print(f"Listo. Envía este archivo para revisarlo: {ruta}")
         return
     if args.cmd == "telegram":
         return asistente_telegram(args.token)
