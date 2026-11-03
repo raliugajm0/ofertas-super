@@ -10,7 +10,7 @@ Compara precios de **Walmart, Bodega Aurrera, HEB, Chedraui, Soriana y GranD**. 
 | Veredicto | Compara el precio de hoy con la mediana de los últimos 90 días: **excelente** (mínimo histórico), **buena** (≥15 % abajo), **normal** o **cara**. |
 | Ofertas simuladas | Marca cuando el precio "antes" nunca existió o el "descuento" no baja del precio habitual, y guarda **evidencia fechada** en `~/.ofertas-super/evidencia/`. |
 | Profeco QQP | Importa los datos abiertos de *Quién es Quién en los Precios* filtrados a Victoria, Tamaulipas, como referencia oficial. |
-| GranD | No tiene catálogo en línea. Sus precios se capturan del folleto semanal (Facebook/Instagram/Flipsnack), del anaquel o del ticket, en la página **Capturar GranD** o con `ofertas capturar`. Entran en la comparación por 14 días y alimentan el historial. |
+| GranD / HEB | GranD no tiene catálogo en línea y HEB bloquea consultas automatizadas. Sus precios se capturan del folleto semanal (Facebook/Instagram/Flipsnack), del anaquel o del ticket, en la página **Capturar precios** o con `ofertas capturar` (para HEB: `ofertas capturar 24.90 Leche Clavel 360 g --tienda heb`). Entran en la comparación por 14 días y alimentan el historial. |
 | Alertas | Lista de vigilancia con precio objetivo opcional y avisos por **Telegram**, **correo** o consola. |
 
 ## Instalación (en tu computadora)
@@ -20,8 +20,6 @@ git clone <este repositorio> && cd ofertas-super
 python -m venv .venv
 # Windows: .venv\Scripts\activate    |   Mac/Linux: source .venv/bin/activate
 pip install -e .
-# Recomendado (sortea bloqueos antibot de Walmart/Aurrera/Soriana):
-pip install -e ".[navegador]" && playwright install chromium
 ```
 
 ## Uso
@@ -61,6 +59,7 @@ ofertas programar --quitar   # desactivar
 - `vtex_sc`: canal de ventas por tienda VTEX (HEB/Chedraui) si tu sucursal tiene precios propios, por ejemplo `{"heb": "1"}`.
 
 ## Limitaciones honestas
+- **HEB bloquea las consultas automatizadas** con un sistema antibot (Akamai). El programa lo detecta, lo reporta y **no intenta evadirlo**. Sus precios se capturan a mano en **Capturar precios** (de la app, el folleto o el anaquel) o se toman de los datos de Profeco. Si otra tienda empieza a bloquear, pasa lo mismo.
 - Las tiendas **no ofrecen API pública**. Los adaptadores leen sus buscadores web y pueden fallar si cambian su sitio; la página web indica qué tienda no respondió. Soriana es **experimental**.
 - El precio en línea puede diferir del de la sucursal física. El veredicto mejora con el historial: las primeras semanas casi todo saldrá "sin historial".
 - Los términos de uso de los sitios restringen la extracción automatizada. El programa está pensado para **uso personal y moderado** (consultas espaciadas, sin reventa de datos).

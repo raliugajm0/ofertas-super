@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% block cuerpo %}
-<h2>Capturar precios de GranD</h2>
-<p class="mut">GranD no tiene catálogo en línea: publica su folleto semanal en Facebook, Instagram y Flipsnack. Anota aquí los precios del folleto, del anaquel o de tu ticket. Entran a la comparación durante {{ cfg.dias_vigencia_captura }} días y quedan en el historial.</p>
+<h2>Capturar precios (GranD, HEB u otra tienda)</h2>
+<p class="mut">Para tiendas sin catálogo en línea o que bloquean consultas automatizadas (como HEB). GranD no tiene catálogo en línea: publica su folleto semanal en Facebook, Instagram y Flipsnack. Anota aquí los precios del folleto, del anaquel o de tu ticket. Entran a la comparación durante {{ cfg.dias_vigencia_captura }} días y quedan en el historial.</p>
 {% if ok %}<div class="err" style="background:var(--okbg);color:var(--ok)">Precio registrado.</div>{% endif %}
 {% if aviso %}<div class="err">{{ aviso }}</div>{% endif %}
 <form class="buscar" method="post">
-  <input type="hidden" name="tienda" value="grand">
+  <select name="tienda" style="padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx)">
+    <option value="grand">GranD</option>
+    {% for clave, cls in TIENDAS.items() %}<option value="{{ clave }}">{{ cls.nombre }}</option>{% endfor %}
+  </select>
   <input type="text" name="nombre" placeholder="Producto con presentación (ej. Frijol Isadora 430 g)" required>
   <input type="text" name="marca" placeholder="Marca (opcional)" style="max-width:180px">
   <input type="number" step="0.01" name="precio" placeholder="Precio" required style="max-width:130px">

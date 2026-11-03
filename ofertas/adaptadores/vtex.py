@@ -3,7 +3,8 @@
 Se intentan, en orden, tres rutas, porque cada tienda VTEX habilita distintas:
   1. API de catálogo:      /api/catalog_system/pub/products/search?ft=...
   2. Intelligent Search:   /api/io/_v/api/intelligent-search/product_search/?query=...
-  3. Página de búsqueda:   /<texto>?_q=<texto>&map=ft  (JSON-LD; con navegador si hay antibot)
+  3. Página de búsqueda:   /busca?ft=<texto>  o  /<texto>?_q=<texto>&map=ft  (JSON-LD)
+Si la tienda responde con un reto antibot, se detiene y lo reporta; no se intenta evadirlo.
 El parámetro `sc` (sales channel) define la región/sucursal de precios; si tu
 sucursal maneja precios distintos, configúralo en config.json -> "vtex_sc".
 """
@@ -59,18 +60,26 @@ class VTEX(Adaptador):
         return parsear(data["products"], self.clave, self.host)
 
     def ruta_pagina(self, consulta: str, limite: int) -> list[Producto]:
-        url = f"https://{self.host}/{quote(consulta)}?_q={quote(consulta)}&map=ft"
-        productos = json_ld_productos(self.html(url), self.clave, f"https://{self.host}")
-        if not productos:
-            raise SinDatos("la página de búsqueda no trae datos de productos legibles")
-        return productos
+        q = quote(consulta)
+        for url in (f"https://{self.host}/busca?ft={q}", f"https://{self.host}/{q}?_q={q}&map=ft"):
+            try:
+                productos = json_ld_productos(self.html(url), self.clave, f"https://{self.host}")
+            except Bloqueado:
+                raise
+            except Exception:  # noqa: BLE001 - p. ej. 404 en un formato de URL; se prueba el otro
+                continue
+            if productos:
+                return productos
+        raise SinDatos("la página de búsqueda no trae datos de productos legibles")
 
     def buscar(self, consulta: str, limite: int = 20) -> list[Producto]:
         fallas = []
         for ruta in (self.ruta_catalogo, self.ruta_intelligent_search, self.ruta_pagina):
             try:
                 productos = ruta(consulta, limite)
-            except (SinDatos, Bloqueado) as e:
+            except Bloqueado:
+                raise  # antibot: se respeta y se reporta tal cual
+            except SinDatos as e:
                 fallas.append(f"{ruta.__name__}: {e}")
                 continue
             except Exception as e:  # noqa: BLE001 - se intenta la siguiente ruta

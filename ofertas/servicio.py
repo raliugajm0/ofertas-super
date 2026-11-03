@@ -55,7 +55,7 @@ def buscar(consulta: str, db: DB, cfg: dict, tiendas: list[str] | None = None, l
 
     resultados = [evaluar_y_guardar(p, db, cfg) for lista in listas for p in lista]
     sel = tiendas_sel or cfg["tiendas"]
-    resultados += capturas(consulta, db, cfg, [t for t in sel if t not in TIENDAS])
+    resultados += capturas(consulta, db, cfg, list(sel))
     resultados.sort(key=clave_orden)
     return Busqueda(consulta, resultados, errores, referencia_profeco(consulta, db))
 

@@ -18,7 +18,23 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
 
 
 class Bloqueado(Exception):
-    """La tienda respondió con antibot (403/429/captcha)."""
+    """La tienda rechaza consultas automatizadas (403/429, captcha o reto antibot).
+
+    No se intenta evadir: la tienda se reporta como no disponible y sus precios
+    pueden capturarse a mano o tomarse de Profeco.
+    """
+
+
+# Páginas de reto antibot que responden "200 OK" en lugar de datos:
+#  - Akamai Bot Manager inyecta <script src="/palabras-con-guiones-sin-extension" async>
+#  - PerimeterX, DataDome y Cloudflare tienen marcadores propios
+_RETO = re.compile(
+    r'<script[^>]+src="/[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+){4,}"|_pxCaptcha|px-captcha|captcha-delivery|'
+    r'cf-challenge|challenge-platform|bm-verify|sec-if-cpt', re.I)
+
+
+def es_reto_antibot(texto: str) -> bool:
+    return bool(_RETO.search(texto[:20000])) or "captcha" in texto[:5000].lower()
 
 
 class Adaptador(ABC):
@@ -44,36 +60,17 @@ class Adaptador(ABC):
     def get(self, url: str, **kw) -> requests.Response:
         self._pausa()
         r = self.s.get(url, timeout=25, **kw)
-        if r.status_code in (403, 429) or "captcha" in r.text[:5000].lower():
-            raise Bloqueado(f"{self.nombre}: HTTP {r.status_code}")
+        if r.status_code in (403, 429) or es_reto_antibot(r.text):
+            raise Bloqueado(f"{self.nombre} bloquea las consultas automatizadas (sistema antibot). "
+                            f"Captura sus precios a mano o usa los datos de Profeco.")
         r.raise_for_status()
         return r
 
     def html(self, url: str) -> str:
-        """HTML con requests; si hay antibot, intenta con navegador real (Playwright)."""
-        try:
-            return self.get(url).text
-        except Bloqueado:
-            return html_con_navegador(url)
+        return self.get(url).text
 
     @abstractmethod
     def buscar(self, consulta: str, limite: int = 20) -> list[Producto]: ...
-
-
-def html_con_navegador(url: str) -> str:
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError as e:  # pragma: no cover
-        raise Bloqueado("Antibot activo. Instala playwright (pip install playwright && "
-                        "playwright install chromium) para usar navegador real.") from e
-    with sync_playwright() as p:  # pragma: no cover - requiere navegador
-        nav = p.chromium.launch(headless=True)
-        pag = nav.new_page(locale="es-MX", user_agent=UA)
-        pag.goto(url, wait_until="domcontentloaded", timeout=45000)
-        pag.wait_for_timeout(2500)
-        contenido = pag.content()
-        nav.close()
-        return contenido
 
 
 def a_float(v) -> float | None:

@@ -254,3 +254,42 @@ def test_vtex_error_explicativo(monkeypatch):
         vtex.HEB(CFG).buscar("leche")
     msg = str(e.value)
     assert "ruta_catalogo" in msg and "ruta_intelligent_search" in msg and "HTTP 200, text/html" in msg
+
+
+AKAMAI = ('<!DOCTYPE html><html lang="es"><head><script src="/ppine-thee-lour-dure-of-who-all-rare-like-very-S" '
+          'async></script><meta charset="utf-8"></head><body></body></html>')
+
+
+def test_detecta_reto_akamai_y_no_lo_evade(monkeypatch):
+    from ofertas.adaptadores import base
+    assert base.es_reto_antibot(AKAMAI)
+    assert not base.es_reto_antibot('<html><script src="/assets/app-main.js"></script></html>')
+
+    llamadas = []
+
+    class Resp:
+        status_code, text, headers = 200, AKAMAI, {"Content-Type": "text/html"}
+
+    def get(url, timeout=None, **kw):
+        llamadas.append(url)
+        return Resp()
+
+    ad = vtex.HEB({**CFG, "pausa_segundos": 0})
+    monkeypatch.setattr(ad.s, "get", get)
+    with pytest.raises(base.Bloqueado, match="bloquea las consultas automatizadas"):
+        ad.buscar("leche")
+    assert len(llamadas) == 1  # se detiene al primer reto; no insiste por otras rutas
+
+
+def test_captura_heb_aparece_en_busqueda(tmp_path, monkeypatch):
+    from ofertas.servicio import buscar, registrar_captura
+
+    class Vacia(Falsa):
+        def buscar(self, q, limite=20):
+            return []
+
+    monkeypatch.setitem(TIENDAS, "heb", Vacia)
+    db = DB(tmp_path / "h.db")
+    registrar_captura(db, "heb", "Leche Clavel 360 g", 24.9)
+    r = buscar("leche clavel", db, {**CFG, "tiendas": []}, ["heb"])
+    assert r.resultados and r.resultados[0].producto.tienda == "heb"
