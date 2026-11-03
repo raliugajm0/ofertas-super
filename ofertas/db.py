@@ -18,6 +18,7 @@ CREATE INDEX IF NOT EXISTS ix_precios ON precios(producto_id, fecha);
 CREATE TABLE IF NOT EXISTS vigilancia(
   id INTEGER PRIMARY KEY, consulta TEXT NOT NULL, precio_objetivo REAL,
   activo INTEGER DEFAULT 1, creado TEXT);
+CREATE TABLE IF NOT EXISTS bloqueos(tienda TEXT PRIMARY KEY, fecha TEXT);
 CREATE TABLE IF NOT EXISTS avisos(
   vigilancia_id INTEGER, producto_id INTEGER, dia TEXT, precio REAL,
   UNIQUE(vigilancia_id, producto_id, dia));
@@ -62,6 +63,20 @@ class DB:
             "SELECT p.*, pr.precio, pr.precio_antes, pr.fecha FROM productos p JOIN precios pr "
             "ON pr.producto_id=p.id WHERE pr.fecha=(SELECT MAX(fecha) FROM precios WHERE producto_id=p.id) "
             "AND pr.fecha>=?", (desde,)).fetchall()
+
+    # --- tiendas con antibot ---
+    def marcar_bloqueada(self, tienda: str):
+        self.c.execute("INSERT OR REPLACE INTO bloqueos VALUES(?,?)",
+                       (tienda, datetime.now().isoformat(timespec="seconds")))
+        self.c.commit()
+
+    def bloqueadas(self, horas: int = 24) -> set[str]:
+        desde = (datetime.now() - timedelta(hours=horas)).isoformat()
+        return {r[0] for r in self.c.execute("SELECT tienda FROM bloqueos WHERE fecha>=?", (desde,))}
+
+    def desbloquear(self):
+        self.c.execute("DELETE FROM bloqueos")
+        self.c.commit()
 
     # --- vigilancia ---
     def vigilar(self, consulta: str, objetivo: float | None) -> int:

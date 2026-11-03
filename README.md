@@ -59,7 +59,7 @@ ofertas programar --quitar   # desactivar
 - `vtex_sc`: canal de ventas por tienda VTEX (HEB/Chedraui) si tu sucursal tiene precios propios, por ejemplo `{"heb": "1"}`.
 
 ## Limitaciones honestas
-- **HEB bloquea las consultas automatizadas** con un sistema antibot (Akamai). El programa lo detecta, lo reporta y **no intenta evadirlo**. Sus precios se capturan a mano en **Capturar precios** (de la app, el folleto o el anaquel) o se toman de los datos de Profeco. Si otra tienda empieza a bloquear, pasa lo mismo.
+- **HEB, Walmart, Bodega Aurrera y Soriana bloquean las consultas automatizadas** con sistemas antibot; hoy sólo **Chedraui** responde en automático. El programa lo detecta, lo reporta y **no intenta evadirlo**. Sus precios se capturan a mano en **Capturar precios** (de la app, el folleto o el anaquel) o se toman de los datos de Profeco. Una tienda que bloquea se omite por 24 h para no insistir (`ofertas desbloquear` para reintentar antes).
 - Las tiendas **no ofrecen API pública**. Los adaptadores leen sus buscadores web y pueden fallar si cambian su sitio; la página web indica qué tienda no respondió. Soriana es **experimental**.
 - El precio en línea puede diferir del de la sucursal física. El veredicto mejora con el historial: las primeras semanas casi todo saldrá "sin historial".
 - Los términos de uso de los sitios restringen la extracción automatizada. El programa está pensado para **uso personal y moderado** (consultas espaciadas, sin reventa de datos).

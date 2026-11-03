@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
-from .adaptadores import TIENDAS
+from .adaptadores import TIENDAS, Bloqueado
 from .analisis import Veredicto, evaluar, guardar_evidencia
 from .db import DB
 from .modelos import Producto
@@ -30,6 +30,19 @@ class Busqueda:
     resultados: list[Resultado]
     errores: dict[str, str]
     referencia_profeco: list
+    bloqueadas: list[str] = field(default_factory=list)  # tiendas con antibot (recientes)
+
+    def grupos(self) -> list[tuple[str, list[Resultado]]]:
+        """Resultados agrupados por unidad comparable; el grupo más numeroso primero."""
+        g: dict[str, list[Resultado]] = {}
+        for r in self.resultados:
+            g.setdefault(r.unitario[1] if r.unitario else "", []).append(r)
+        orden = sorted(g, key=lambda u: (u == "", -len(g[u])))
+        return [(ETIQUETAS.get(u, u), g[u]) for u in orden]
+
+
+ETIQUETAS = {"l": "Por litro", "kg": "Por kilo", "pz": "Por pieza", "": "Sin presentación para comparar"}
+HORAS_BLOQUEO = 24
 
 
 def _palabras_coinciden(consulta: str, nombre: str) -> bool:
@@ -39,12 +52,19 @@ def _palabras_coinciden(consulta: str, nombre: str) -> bool:
 
 def buscar(consulta: str, db: DB, cfg: dict, tiendas: list[str] | None = None, limite: int = 20) -> Busqueda:
     tiendas_sel = tiendas
-    tiendas = [t for t in (tiendas or cfg["tiendas"]) if t in TIENDAS]
+    recientes = db.bloqueadas(HORAS_BLOQUEO)
+    pedidas = [t for t in (tiendas or cfg["tiendas"]) if t in TIENDAS]
+    bloqueadas = [t for t in pedidas if t in recientes]
+    tiendas = [t for t in pedidas if t not in recientes]  # no se insiste con quien bloquea
     errores: dict[str, str] = {}
 
     def una(clave):
         try:
             return TIENDAS[clave](cfg).buscar(consulta, limite)
+        except Bloqueado:
+            log.warning("%s bloquea consultas automatizadas; se omite por %sh", clave, HORAS_BLOQUEO)
+            bloqueadas.append(clave)
+            return []
         except Exception as e:  # noqa: BLE001 - se reporta al usuario
             log.warning("%s falló: %s", clave, e)
             errores[clave] = f"{type(e).__name__}: {e}"[:200]
@@ -53,11 +73,14 @@ def buscar(consulta: str, db: DB, cfg: dict, tiendas: list[str] | None = None, l
     with ThreadPoolExecutor(max_workers=len(tiendas) or 1) as ex:
         listas = list(ex.map(una, tiendas))
 
+    for t in bloqueadas:
+        if t not in recientes:
+            db.marcar_bloqueada(t)
     resultados = [evaluar_y_guardar(p, db, cfg) for lista in listas for p in lista]
     sel = tiendas_sel or cfg["tiendas"]
     resultados += capturas(consulta, db, cfg, list(sel))
     resultados.sort(key=clave_orden)
-    return Busqueda(consulta, resultados, errores, referencia_profeco(consulta, db))
+    return Busqueda(consulta, resultados, errores, referencia_profeco(consulta, db), sorted(set(bloqueadas)))
 
 
 def evaluar_y_guardar(p: Producto, db: DB, cfg: dict) -> Resultado:

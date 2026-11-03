@@ -41,6 +41,7 @@ def main(argv=None):
     dg = sub.add_parser("diagnosticar", help="guarda lo que responde una tienda para ajustar su lectura")
     dg.add_argument("tienda")
     dg.add_argument("consulta", nargs="*", default=["leche"])
+    sub.add_parser("desbloquear", help="vuelve a intentar hoy con las tiendas marcadas como bloqueadas")
     sub.add_parser("config", help="crea config.json editable y muestra su ruta")
     args = ap.parse_args(argv)
 
@@ -112,6 +113,9 @@ def main(argv=None):
             if not args.cada:
                 break
             time.sleep(args.cada * 60)
+    elif args.cmd == "desbloquear":
+        db.desbloquear()
+        print("Listo: la próxima búsqueda volverá a consultar todas las tiendas.")
     elif args.cmd == "vigilar":
         db.vigilar(" ".join(args.consulta), args.objetivo)
         print("Agregado.")

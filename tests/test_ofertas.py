@@ -293,3 +293,39 @@ def test_captura_heb_aparece_en_busqueda(tmp_path, monkeypatch):
     registrar_captura(db, "heb", "Leche Clavel 360 g", 24.9)
     r = buscar("leche clavel", db, {**CFG, "tiendas": []}, ["heb"])
     assert r.resultados and r.resultados[0].producto.tienda == "heb"
+
+
+def test_grupos_y_memoria_de_bloqueo(tmp_path, monkeypatch):
+    from ofertas.adaptadores import Bloqueado
+    from ofertas.servicio import buscar
+    llamadas = {"walmart": 0}
+
+    class Bloq(Falsa):
+        def buscar(self, q, limite=20):
+            llamadas["walmart"] += 1
+            raise Bloqueado("Walmart bloquea las consultas automatizadas")
+
+    class Ched(Falsa):
+        def buscar(self, q, limite=20):
+            return [Producto("chedraui", "1", "Leche Condensada 380g", 25.0),
+                    Producto("chedraui", "2", "Leche Entera 1L", 23.5),
+                    Producto("chedraui", "3", "Leche Deslactosada 1L", 24.0)]
+
+    monkeypatch.setitem(TIENDAS, "walmart", Bloq)
+    monkeypatch.setitem(TIENDAS, "chedraui", Ched)
+    db = DB(tmp_path / "b.db")
+    cfg = {**CFG, "tiendas": ["walmart", "chedraui"]}
+    r = buscar("leche", db, cfg)
+    assert r.bloqueadas == ["walmart"] and not r.errores
+    g = r.grupos()
+    assert [e for e, _ in g] == ["Por litro", "Por kilo"]  # el grupo más numeroso primero
+    assert [x.producto.precio for x in g[0][1]] == [23.5, 24.0]
+    r2 = buscar("leche", db, cfg)
+    assert llamadas["walmart"] == 1 and r2.bloqueadas == ["walmart"]  # no se vuelve a consultar
+    db.desbloquear()
+    buscar("leche", db, cfg)
+    assert llamadas["walmart"] == 2
+
+    from ofertas.web import crear_app
+    html = crear_app(db, cfg).test_client().get("/?q=leche").get_data(as_text=True)
+    assert "Walmart</b> bloquea las" in html and "Por litro" in html

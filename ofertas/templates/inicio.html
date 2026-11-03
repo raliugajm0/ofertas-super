@@ -14,6 +14,10 @@
 </form>
 
 {% if b %}
+  {% if b.bloqueadas %}
+    <div class="err">⛔ <b>{% for t in b.bloqueadas %}{{ NOMBRES.get(t, t) }}{% if not loop.last %}, {% endif %}{% endfor %}</b> {{ "bloquean" if b.bloqueadas|length > 1 else "bloquea" }} las consultas automatizadas; no se consultan por 24 h.
+      Sus precios: <a href="{{ url_for('captura') }}">captura manual</a> o datos de Profeco.</div>
+  {% endif %}
   {% for t, e in b.errores.items() %}
     <div class="err"><b>{{ NOMBRES.get(t, t) }}</b> no respondió: {{ e }}</div>
   {% endfor %}
@@ -29,17 +33,18 @@
   </table></div>
   {% endif %}
 
-  <h3>{{ b.resultados|length }} resultados para “{{ b.consulta }}” <span class="mut">— ordenados por precio unitario</span></h3>
-  {% if b.resultados %}
+  <h3>{{ b.resultados|length }} resultados para “{{ b.consulta }}”</h3>
+  {% for etiqueta, grupo in b.grupos() %}
+  <h4 style="margin:18px 0 8px">{{ etiqueta }} <span class="mut">({{ grupo|length }}) — del más barato al más caro</span></h4>
   <div class="scroll"><table class="tabla">
     <tr><th>Tienda</th><th>Producto</th><th class="num">Precio</th><th class="num">Por unidad</th><th>¿Vale la pena?</th></tr>
-    {% for r in b.resultados %}{% set p = r.producto %}{% set v = r.veredicto %}
+    {% for r in grupo %}{% set p = r.producto %}{% set v = r.veredicto %}
     <tr>
       <td>{{ NOMBRES.get(p.tienda, p.tienda) }}</td>
       <td><a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.nombre }}</a>
           {% if not p.disponible %}<span class="tag cara">agotado</span>{% endif %}
           <br><a class="mut" href="{{ url_for('producto', pid=r.pid) }}">historial</a>
-          {% if p.tienda in MANUALES %}<span class="mut"> · capturado {{ p.fecha.strftime('%d/%m') }}</span>{% endif %}</td>
+          {% if p.url == '' %}<span class="mut"> · capturado {{ p.fecha.strftime('%d/%m') }}</span>{% endif %}</td>
       <td class="num">{{ p.precio|mxn }}{% if p.precio_antes %}<br><s>{{ p.precio_antes|mxn }}</s> <span class="mut">-{{ p.descuento_anunciado }}%</span>{% endif %}</td>
       <td class="num">{% if r.unitario %}{{ r.unitario[0]|mxn }}/{{ r.unitario[1] }}{% else %}<span class="mut">—</span>{% endif %}</td>
       <td>
@@ -51,7 +56,7 @@
     </tr>
     {% endfor %}
   </table></div>
-  {% endif %}
+  {% endfor %}
   <p class="mut">El veredicto mejora conforme se acumula historial: cada búsqueda y cada revisión de alertas guarda el precio del día.</p>
 {% else %}
   <p class="mut">Busca un producto para comparar Walmart, Bodega Aurrera, HEB, Chedraui, Soriana y GranD (con los precios que captures). El orden es por precio por kilo, litro o pieza, no por precio de etiqueta.</p>
