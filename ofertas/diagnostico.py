@@ -18,6 +18,8 @@ def urls(clave: str, consulta: str) -> list[str]:
         return [f"https://{h}/api/catalog_system/pub/products/search?ft={q}&_from=0&_to=4",
                 f"https://{h}/api/io/_v/api/intelligent-search/product_search/?query={q}&count=5&page=1",
                 f"https://{h}/{q}?_q={q}&map=ft"]
+    if hasattr(cls, "rutas"):
+        return [cls.base + r.format(q=q) for r in cls.rutas]
     if clave == "soriana":
         return [f"{cls.base}/buscar?q={q}"]
     return [f"{cls.base}/search?q={q}"]

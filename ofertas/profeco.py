@@ -21,7 +21,7 @@ COLUMNAS = ["producto", "presentacion", "marca", "categoria", "catalogo", "preci
             "latitud", "longitud"]
 
 CADENAS = {"walmart": "WALMART", "aurrera": "BODEGA AURRERA", "heb": "HEB", "chedraui": "CHEDRAUI",
-           "soriana": "SORIANA", "grand": "GRAND", "lacomer": "LA COMER", "sams": "SAMS"}
+           "soriana": "SORIANA", "grand": "GRAND", "lacomer": "LA COMER", "sams": "SAMS", "cityclub": "CITY CLUB"}
 
 
 def _norm(s: str) -> str:
@@ -64,7 +64,8 @@ def _cadena(nombre: str, permitidas: list[str]) -> str | None:
     n = _norm(nombre)
     for clave in permitidas:
         patron = CADENAS.get(clave, clave.upper())
-        if n.startswith(patron) or (clave == "walmart" and "WAL MART" in n):
+        if n.startswith(patron) or (clave == "walmart" and n.startswith("WAL MART")) \
+                or (clave == "sams" and n.startswith("SAM S")):
             if clave == "walmart" and "AURRERA" in n:
                 continue
             return clave
@@ -77,7 +78,7 @@ def importar(ruta: str | Path, db: DB, cfg: dict) -> int:
     for f in _filas(Path(ruta)):
         if _norm(f.get("estado", "")) != estado or municipio not in _norm(f.get("municipio", "")):
             continue
-        tienda = _cadena(f.get("cadenacomercial", ""), cfg["tiendas"])
+        tienda = _cadena(f.get("cadenacomercial", ""), list(CADENAS))
         if not tienda:
             continue
         try:

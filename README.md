@@ -1,6 +1,6 @@
 # Ofertas Súper — CP 87130 (Cd. Victoria, Tamaulipas)
 
-Compara precios de **Walmart, Bodega Aurrera, HEB, Chedraui, Soriana y GranD**. El orden es por **precio unitario** (kilo, litro o pieza), guarda historial y te avisa solo de las ofertas que **de verdad** valen la pena.
+Compara precios de **Walmart, Bodega Aurrera, HEB, Chedraui, Soriana, Sam's Club, City Club y GranD**. El orden es por **precio unitario** (kilo, litro o pieza), guarda historial y te avisa solo de las ofertas que **de verdad** valen la pena.
 
 ## Qué hace
 
@@ -59,7 +59,7 @@ ofertas programar --quitar   # desactivar
 - `vtex_sc`: canal de ventas por tienda VTEX (HEB/Chedraui) si tu sucursal tiene precios propios, por ejemplo `{"heb": "1"}`.
 
 ## Limitaciones honestas
-- **HEB, Walmart, Bodega Aurrera y Soriana bloquean las consultas automatizadas** con sistemas antibot; hoy sólo **Chedraui** responde en automático. El programa lo detecta, lo reporta y **no intenta evadirlo**. Sus precios se capturan a mano en **Capturar precios** (de la app, el folleto o el anaquel) o se toman de los datos de Profeco. Una tienda que bloquea se omite por 24 h para no insistir (`ofertas desbloquear` para reintentar antes).
+- **HEB, Walmart, Bodega Aurrera y Soriana bloquean las consultas automatizadas** con sistemas antibot; hoy sólo **Chedraui** responde en automático. Sam's Club y City Club se intentan; si bloquean, aplica lo mismo. En los clubes fíjate en el **precio por unidad**: el paquete grande no siempre es más barato, y requieren membresía. El programa lo detecta, lo reporta y **no intenta evadirlo**. Sus precios se capturan a mano en **Capturar precios** (de la app, el folleto o el anaquel) o se toman de los datos de Profeco. Una tienda que bloquea se omite por 24 h para no insistir (`ofertas desbloquear` para reintentar antes).
 - Las tiendas **no ofrecen API pública**. Los adaptadores leen sus buscadores web y pueden fallar si cambian su sitio; la página web indica qué tienda no respondió. Soriana es **experimental**.
 - El precio en línea puede diferir del de la sucursal física. El veredicto mejora con el historial: las primeras semanas casi todo saldrá "sin historial".
 - Los términos de uso de los sitios restringen la extracción automatizada. El programa está pensado para **uso personal y moderado** (consultas espaciadas, sin reventa de datos).

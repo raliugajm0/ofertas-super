@@ -12,7 +12,7 @@ _DEFAULT = {
     "codigo_postal": "87130",          # Cd. Victoria, Tamaulipas
     "estado": "TAMAULIPAS",
     "municipio": "VICTORIA",
-    "tiendas": ["walmart", "aurrera", "chedraui", "soriana", "grand"],  # HEB bloquea consultas automatizadas: captúralo a mano
+    "tiendas": ["walmart", "aurrera", "chedraui", "soriana", "sams", "cityclub", "grand"],  # HEB bloquea consultas automatizadas: captúralo a mano
     "dias_vigencia_captura": 14,      # cuántos días se muestra un precio capturado a mano
     "umbral_oferta_pct": 15,          # % bajo la mediana histórica para considerarla "buena"
     "dias_historial": 90,
@@ -39,7 +39,8 @@ def cargar() -> dict:
 def guardar(cambios: dict) -> Path:
     """Actualiza sólo las llaves indicadas en config.json, conservando lo demás."""
     archivo = BASE / "config.json"
-    actual = json.loads(archivo.read_text(encoding="utf-8")) if archivo.exists() else dict(_DEFAULT)
+    # sólo se guardan los valores que el usuario cambió; lo demás sigue los valores por defecto
+    actual = json.loads(archivo.read_text(encoding="utf-8")) if archivo.exists() else {}
     actual.update(cambios)
     archivo.write_text(json.dumps(actual, indent=2, ensure_ascii=False), encoding="utf-8")
     return archivo

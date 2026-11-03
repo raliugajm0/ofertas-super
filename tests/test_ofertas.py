@@ -329,3 +329,39 @@ def test_grupos_y_memoria_de_bloqueo(tmp_path, monkeypatch):
     from ofertas.web import crear_app
     html = crear_app(db, cfg).test_client().get("/?q=leche").get_data(as_text=True)
     assert "Walmart</b> bloquea las" in html and "Por litro" in html
+
+
+def test_clubes(monkeypatch):
+    from ofertas.adaptadores import clubes
+    from ofertas.adaptadores.base import Bloqueado
+    vistas = []
+    ld = ('<script type="application/ld+json">{"@type":"Product","name":"Leche Lala Entera 6 pzas de 1 l",'
+          '"sku":"55","offers":{"price":"149.00","availability":"InStock"}}</script>')
+
+    def html(self, url):
+        vistas.append(url)
+        if "search?q" in url:
+            raise RuntimeError("404")
+        return ld
+
+    monkeypatch.setattr(clubes.PorPagina, "html", html)
+    ps = clubes.CityClub(CFG).buscar("leche lala")
+    assert ps[0].precio == 149.0 and ps[0].tienda == "cityclub" and len(vistas) == 2
+    assert precio_unitario(ps[0].precio, ps[0].nombre) == (24.83, "l")
+
+    monkeypatch.setattr(clubes.PorPagina, "html", lambda self, url: (_ for _ in ()).throw(Bloqueado("Sam's bloquea")))
+    with pytest.raises(Bloqueado):
+        clubes.SamsMX(CFG).buscar("leche")
+
+
+def test_profeco_clubes_y_heb(tmp_path):
+    hoy = datetime.now().strftime("%Y-%m-%d")
+    fila = '"LECHE","6 PZAS 1 LT","LALA","LACTEOS","BASICOS","{p}","{h}","{c}","CLUB","X","X","TAMAULIPAS","VICTORIA","0","0"\n'
+    csv = tmp_path / "q.csv"
+    csv.write_text("".join(fila.format(p=p, h=hoy, c=c) for p, c in
+                           [(150, "SAM'S CLUB"), (149, "CITY CLUB"), (160, "HEB"), (155, "SORIANA HIPER")]),
+                   encoding="latin-1")
+    db = DB(tmp_path / "p.db")
+    assert importar(csv, db, {**CFG, "tiendas": ["chedraui"]}) == 4  # no depende de la búsqueda automática
+    tiendas = {r[0] for r in db.c.execute("SELECT tienda FROM productos")}
+    assert tiendas == {"profeco:sams", "profeco:cityclub", "profeco:heb", "profeco:soriana"}
